@@ -1,4 +1,4 @@
-# Quantifying the "Infrastructure Premium" in the Sydney Rental Market 🏙️📈
+# Quantifying the "Infrastructure Premium" in the Sydney Rental Market 
 
 ## Table of Contents
 
