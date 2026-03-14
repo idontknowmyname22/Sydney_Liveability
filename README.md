@@ -56,8 +56,8 @@ To run this project locally, you will need the following installed:
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/sydney-liveability-ml.git
-cd sydney-liveability-ml
+git clone https://github.com/idontknowmyname22/Sydney_Liveability.git
+cd Sydney_Liveability
 ```
 
 **2. Install dependencies**
