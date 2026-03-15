@@ -11,15 +11,19 @@
 - [Methodology](#methodology)
 - [Machine Learning Validation](#machine-learning-validation)
 - [Outputs](#outputs)
-- [References & Data Sources](#references--data-sources)
+
 
 ---
 
 ## Overview
 
-This project investigates the relationship between neighborhood infrastructure (transit, schools, business density, points of interest, crime) and median weekly rent across Greater Sydney. By engineering a custom spatial **Liveability Index** and deploying gradient boosting models, this analysis quantifies exactly how much of a suburb's rental price is driven by its surrounding amenities versus overarching macroeconomic noise.
+This project investigates the associations between neighbourhood infrastructure and median weekly rent across Greater Sydney. To capture a suburb's true amenity value, a custom spatial **Liveability Index** was engineered using NSW Spatial Services data—specifically targeting **Community** hubs, **Education**, **Transport**, **Recreation** sites, and **Beaches**.
 
-Crucially, this model explicitly **excludes Household Income**, forcing the algorithm to determine the pure **"Infrastructure Premium"** of a neighborhood independently of local wealth.
+By combining these localized Points of Interest (POIs) with transit access, business density, and crime rates, gradient boosting models were deployed to quantify exactly how much of a suburb's rental price is driven by its surroundings. 
+
+The goal is to isolate the pure **"Infrastructure Premium"** and safety of a locality. As such, the model intentionally does not factor in broader market forces like population growth, immigration, and supply/demand, or property-specific details like age and condition.
+
+*(Note: This analysis is observational and reports associations; it does not establish causal effects.)*
 
 ---
 
@@ -88,15 +92,14 @@ Place the following datasets into the `data/` folder before running the notebook
 
 | File or Folder | Description | Source |
 | --- | --- | --- |
-| `SA2_2021_AUST_SHP_GDA2020/` | ABS SA2 boundary shapefile | [ABS Digital Boundary Files](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files) |
-| `SAL_2021_AUST_GDA2020_SHP/` | ABS Suburb/Locality boundary shapefile | [ABS Digital Boundary Files](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files) |
-| `catchments/` | NSW school catchment shapefiles | [NSW Education Data](https://data.nsw.gov.au/data/dataset/school-catchment-areas-for-2021) |
-| `Businesses.csv` | Business counts by SA2 and industry | [ABS Business Register](https://www.abs.gov.au/statistics/economy/business-indicators/counts-australian-businesses-including-entries-and-exits/latest-release) |
-| `Income.csv` | Income statistics by SA2 | [ABS Census DataPacks](https://www.abs.gov.au/census/find-census-data/datapacks) |
-| `Population.csv` | Population by age group and SA2 | [ABS Census DataPacks](https://www.abs.gov.au/census/find-census-data/datapacks) |
-| `Stops.txt` | GTFS-style public transport stop locations | [Transport for NSW Open Data](https://opendata.transport.nsw.gov.au/) |
-| `SuburbData25Q3.csv` | NSW Police crime data by suburb (2025 Q3) | [BOCSAR Crime Statistics](https://www.bocsar.nsw.gov.au/Pages/bocsar_crime_stats/bocsar_local_health_district_stats.aspx) |
-| `2021Census_G02_NSW_SA2.csv` | ABS Census G02 — median rent, income, household stats | [ABS Census DataPacks](https://www.abs.gov.au/census/find-census-data/datapacks) |
+| `SA2_2021_AUST_SHP_GDA2020/` | ABS SA2 boundary shapefile | [ABS Digital Boundary Files](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/SA2_2021_AUST_SHP_GDA2020.zip) |
+| `SAL_2021_AUST_GDA2020_SHP/` | ABS Suburb/Locality boundary shapefile | [ABS Digital Boundary Files](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/SAL_2021_AUST_GDA2020_SHP.zip) |
+| `catchments/` | NSW school catchment shapefiles | [NSW Education Data](https://data.nsw.gov.au/data/dataset/8b1e8161-7252-43d9-81ed-6311569cb1d7/resource/32d6f502-ddb1-45d9-b114-5e34ddfd33ac/download/catchments.zip) |
+| `Businesses.csv` | Business counts by SA2 and industry | [ABS Business Register]*Provided in the repo* |
+| `Population.csv` | Population by age group and SA2 | [ABS Census DataPacks]*Provided in the repo* |
+| `Stops.txt` | GTFS-style public transport stop locations | [Transport for NSW Open Data](https://opendata.transport.nsw.gov.au/data/dataset/d1f68d4f-b778-44df-9823-cf2fa922e47f/resource/67974f14-01bf-47b7-bfa5-c7f2f8a950ca/download/full_greater_sydney_gtfs_static_0.zip) |
+| `SuburbData25Q3.csv` | NSW Police crime data by suburb  2019–2020 incidents used | [BOCSAR Crime Statistics](https://bocsarblob.blob.core.windows.net/bocsar-open-data/SuburbData.zip) |
+| `2021Census_G02_NSW_SA2.csv` | ABS Census G02 — median rent, income, household stats | [ABS Census DataPacks](https://www.abs.gov.au/census/find-census-data/datapacks/download/2021_GCP_all_for_NSW_short-header.zip) |
 
 > POIs are fetched live from the [NSW Government Spatial Services API](https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_POI/MapServer) at runtime — no local file required.
 
@@ -132,14 +135,8 @@ Raw counts of infrastructure inherently bias physically larger suburbs. To count
 
 ## Outputs
 
-- **The 43% Premium** — The optimised XGBoost model achieved a Cross-Validated R² of 0.431, demonstrating that localised infrastructure and safety independently explain over 40% of the variance in Sydney's rental market.
-- **Tight Financial Tolerance** — An Average RMSE of ~$77 demonstrates the ability to estimate median weekly rent with high precision using solely external neighbourhood features.
+- **Explaining 43% of Market Variance** - The optimised XGBoost model achieved a Cross-Validated **R² of 0.438**. In practical terms, this demonstrates that the engineered liveability features (infrastructure and safety) independently account for roughly **43.8% of the total variance** in Sydney's rental prices.
+- **Tight Financial Tolerance** — An Average RMSE of $77 demonstrates the ability to estimate median weekly rent with high precision using solely external neighbourhood features.
 - **Dominant Features** — Feature importance extraction revealed that **Crime Rate (Safety)** and **Business Density (Convenience)** are the strongest infrastructure signals, heavily outweighing public transit access and localised points of interest in driving rental premiums.
 
 ---
-
-## References & Data Sources
-
-- [Australian Bureau of Statistics (ABS) — 2021 Census DataPacks](https://www.abs.gov.au/census/find-census-data/datapacks)
-- [NSW Bureau of Crime Statistics and Research (BOCSAR)](https://www.bocsar.nsw.gov.au/)
-- [PostGIS Spatial Database Documentation](https://postgis.net/documentation/)
