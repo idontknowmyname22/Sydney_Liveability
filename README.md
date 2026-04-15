@@ -17,11 +17,11 @@
 
 ## Overview
 
-This project investigates the associations between neighbourhood infrastructure and median weekly rent across Greater Sydney. To capture a suburb's true amenity value, a custom spatial **Liveability Index** was engineered using NSW Spatial Services data—specifically targeting **Community** hubs, **Education**, **Transport**, **Recreation** sites, and **Beaches**.
+This project investigates the associations between neighbourhood infrastructure and median weekly rent across Greater Sydney. To capture a suburb's amenity profile, a custom spatial **Liveability Index** was engineered using NSW Spatial Services data—specifically targeting **Community** hubs, **Education**, **Transport**, **Recreation** sites, and **Beaches**.
 
-By combining these localized Points of Interest (POIs) with transit access, business density, and crime rates, gradient boosting models were deployed to quantify exactly how much of a suburb's rental price is driven by its surroundings. 
+By combining these localised Points of Interest (POIs) with transit access, business density, and crime rates, tree-based regression models were used to test how much of Sydney's rent variation can be explained by liveability features alone.
 
-The goal is to isolate the pure **"Infrastructure Premium"** and safety of a locality. As such, the model intentionally does not factor in broader market forces like population growth, immigration, and supply/demand, or property-specific details like age and condition.
+The goal is to isolate a liveability-driven **"Infrastructure Premium"** while deliberately excluding broader market forces such as income, supply constraints, dwelling-specific characteristics, and unobserved prestige effects that go beyond the included beach-access amenity signal. This makes the ML component an intentionally constrained, explanatory experiment rather than a production-grade rent forecasting system.
 
 *(Note: This analysis is observational and reports associations; it does not establish causal effects.)*
 
@@ -42,7 +42,7 @@ The analysis is separated into two core Jupyter Notebooks to ensure a clear sepa
 
 - Fuses the SQL-engineered Z-scores with ground-truth economic data from the 2021 ABS Census Datapacks.
 - Trains and optimises Random Forest and XGBoost regressors to predict Median Weekly Rent.
-- Extracts feature importances and runs rigorous Shuffled 5-Fold Cross-Validation.
+- Extracts feature importances and reports both shuffled and geography-aware cross-validation results.
 
 ---
 
@@ -109,7 +109,7 @@ Place the following datasets into the `data/` folder before running the notebook
 
 1. Launch Jupyter Notebook or JupyterLab.
 2. Open and run `Sydney_Liveability.ipynb` from top to bottom. This executes the spatial joins, calculates the Z-scores, saves them to the database, and renders the interactive Plotly map.
-3. Open and run `Sydney_Liveability_ML.ipynb` from top to bottom. This merges the spatial data with the ABS Census CSV, trains the models, and outputs the final cross-validation metrics.
+3. Open and run `Sydney_Liveability_ML.ipynb` from top to bottom. This merges the spatial data with the ABS Census CSV, trains the models, and outputs both shuffled and geography-aware validation metrics.
 
 ---
 
@@ -127,16 +127,16 @@ Raw counts of infrastructure inherently bias physically larger suburbs. To count
 
 ## Machine Learning Validation
 
-- **Baseline Model (Random Forest)** — Established an initial ensemble baseline, identifying Crime Rate and Business Density as the primary infrastructure proxies for market value.
-- **Model Optimisation (XGBoost)** — Tuned an XGBoost Regressor with constrained depth (`max_depth=2`, `learning_rate=0.05`). This shallow tree architecture minimised spatial overfitting, allowing the model to learn general city-wide trends rather than memorising localised geographic noise.
-- **Robustness Testing** — Implemented Shuffled 5-Fold Cross-Validation. Shuffling was enforced to break geographic clustering (e.g. preventing a single fold from containing exclusively luxury coastal suburbs), ensuring final metrics represent a true city-wide average.
+- **Baseline Model (Random Forest)** — Established an initial ensemble baseline and highlighted Crime Rate and Business Density as the strongest liveability-linked rent signals.
+- **Model Optimisation (XGBoost)** — Tuned an XGBoost Regressor with constrained depth (`max_depth=2`, `learning_rate=0.05`) to reduce overfitting on a small 360-row SA2 dataset.
+- **Two Validation Lenses** — The notebook reports both Shuffled 5-Fold Cross-Validation and a stricter GroupKFold split by SA4. The shuffled metric measures within-city interpolation across the existing Sydney mix; the grouped metric asks the harder question of whether the learned relationships transfer to entirely unseen subregions.
 
 ---
 
 ## Outputs
 
-- **Explaining 43% of Market Variance** - The optimised XGBoost model achieved a Cross-Validated **R² of 0.438**. In practical terms, this demonstrates that the engineered liveability features (infrastructure and safety) independently account for roughly **43.8% of the total variance** in Sydney's rental prices.
-- **Tight Financial Tolerance** — An Average RMSE of $77 demonstrates the ability to estimate median weekly rent with high precision using solely external neighbourhood features.
-- **Dominant Features** — Feature importance extraction revealed that **Crime Rate (Safety)** and **Business Density (Convenience)** are the strongest infrastructure signals, heavily outweighing public transit access and localised points of interest in driving rental premiums.
+- **Moderate Within-City Signal** — Under shuffled 5-fold cross-validation, the tuned XGBoost model achieved **R² = 0.471** with **RMSE = $75.09**, while Random Forest achieved **R² = 0.447** with **RMSE = $76.81**. This suggests the liveability features carry useful explanatory signal when interpolating across the current Sydney SA2 mix.
+- **Weak Transfer To Unseen Regions** — Under geography-aware GroupKFold by SA4, performance dropped sharply to **R² = 0.078** for XGBoost and **R² = 0.021** for Random Forest. The index still contains signal, but it does not on its own support strong out-of-region rent prediction claims.
+- **Dominant Features** — Feature importance extraction still identified **Crime Rate (Safety)** and **Business Density (Convenience)** as the strongest liveability-linked drivers in the Random Forest model.
 
 ---
